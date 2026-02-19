@@ -1,0 +1,35 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/321364396036/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@my-gcp-playground-480411.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: gcloud config set project my-gcp-playground-480411
+
+      - run: |
+          gcloud builds submit \
+            --tag europe-west1-docker.pkg.dev/my-gcp-playground-480411/cloud-run-repo/cloud-run-test
+
+      - run: |
+          gcloud run deploy cloud-run-test \
+            --image europe-west1-docker.pkg.dev/my-gcp-playground-480411/cloud-run-repo/cloud-run-test \
+            --region europe-west1 \
+            --allow-unauthenticated
